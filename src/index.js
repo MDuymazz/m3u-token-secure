@@ -30,16 +30,8 @@ async function handleRequest(request) {
     if (user.used && user.ip !== ip) {
         const customM3U = `#EXTM3U
 
-#EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="TOKEN HATASI", BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!
-http://iptv-info.local/token-hatasi
-
-#EXTINF:-1 tvg-name="TENIS" tvg-logo="https://w7.pngwing.com/pngs/639/775/png-transparent-green-tennis-ball-tennis-ball-cricket-the-us-open-tennis-tennis-ball-sport-sporting-goods-grass-thumbnail.png" group-title="GÜNLÜK SPOR AKIŞI", CANLI (18:00) M.KEYS – L.BRONZETTI (BEIN SPORTS MAX 1)
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
-#EXTVLCOPT:http-referrer=https://golvar2363.sbs/
-https://playerpro.live/proxy.php?url=https://a.strmrdr-
-
-#EXTINF:-1 tvg-name="BASKETBOL" tvg-logo="https://cdn-icons-png.flaticon.com/512/861/861512.png" group-title="GÜNLÜK SPOR AKIŞI", ANADOLU EFES – FENERBAHÇE (S SPORTS)
-https://playerpro.live/proxy.php?url=https://b.strmrdr-`;
+#EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!", LÜTFEN DESTEK ALINIZ...
+http://iptv-info.local/token-hatasi`;
 
         return new Response(customM3U, {
             headers: {
@@ -56,10 +48,10 @@ https://playerpro.live/proxy.php?url=https://b.strmrdr-`;
     if (turkeyTime > expireDate) {
         const expiredM3U = `#EXTM3U
 
-#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="UYARI", IPTV SÜRENİZ DOLMUŞTUR!
+#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="IPTV SÜRENİZ DOLMUŞTUR!", IPTV SÜRENİZ DOLMUŞTUR!
 https://iptv-info.local/sure-doldu1
 
-#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="SATIN AL", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
+#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
 https://iptv-info.local/sure-doldu2`;
 
         return new Response(expiredM3U, {
@@ -83,7 +75,7 @@ https://iptv-info.local/sure-doldu2`;
         minute: "2-digit"
     });
 
-    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="SÜRE", IPTV BİTİŞ SÜRESİ: ${expireString}
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
 http://iptv-info.local/expire`;
 
     if (m3uData.startsWith("#EXTM3U")) {
