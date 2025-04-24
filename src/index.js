@@ -25,10 +25,15 @@ async function handleRequest(request) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    // Eğer token geçerli ise, m3u dosyasının linkine yönlendirme yapıyoruz.
-    const redirectUrl = `https://m3u-token-secure.mm-duymazz.workers.dev/?key=${key}.m3u`; // Sonuna ".m3u" ekliyoruz.
+    // Eğer token geçerli ise, m3u dosyasını alıyoruz ve raw formatında döndürüyoruz.
+    const m3uResponse = await fetch(m3uLink);
+    const m3uData = await m3uResponse.text();
 
-    return Response.redirect(redirectUrl, 302);  // 302 ile yönlendirme yapıyoruz.
+    return new Response(m3uData, {
+        headers: {
+            "Content-Type": "application/vnd.apple.mpegurl",  // m3u formatı için Content-Type başlığı
+        }
+    });
 }
 
 addEventListener("fetch", event => {
