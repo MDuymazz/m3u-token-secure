@@ -1,20 +1,26 @@
 {
-  "user1": {
-    "secret_key": "calisanKey987",
-    "expire_date": "2025-04-24T23:00:00Z",
+  "user0": {
+    "secret_key": "testdeneme0",
+    "expire_date": "2025-12-31T23:59:59Z",
     "used": true,
     "ip": "103.228.242.184"
   },
+  "user1": {
+    "secret_key": "temiz",
+    "expire_date": "2025-04-24T23:00:00Z",
+    "used": false,
+    "ip": ""
+  },
   "user2": {
-    "secret_key": "testKey1500",
+    "secret_key": "temiz1",
     "expire_date": "2025-04-25T07:00:00Z",
-    "used": true,
-    "ip": "78.169.70.243"
+    "used": false,
+    "ip": ""
   },
   "user3": {
-    "secret_key": "testKey150",
+    "secret_key": "temiz2",
     "expire_date": "2025-04-25T07:00:00Z",
-    "used": true,
-    "ip": "78.168.10.244"
+    "used": false,
+    "ip": ""
   }
 }
