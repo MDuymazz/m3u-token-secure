@@ -32,7 +32,9 @@ async function handleRequest(request) {
 
         // Eğer IP adresi eşleşmiyorsa, token geçersizdir
         if (user.ip !== ip) {
-            return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
+            return new Response("#EXTM3U
+#EXTINF:-1 tvg-name="" tvg-logo="" tvg-language="Turkish" tvg-country="TR" group-title="BU TOKEN BAŞKA CİHAZDA KULLANILDI.",BU TOKEN BAŞKA CIHAZDA KULLANILDI.
+https://deneme.m3u8", { status: 403 });
         }
     }
 
