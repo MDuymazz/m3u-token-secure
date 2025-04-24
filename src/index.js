@@ -3,13 +3,20 @@ const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/m
 
 async function handleRequest(request) {
     const url = new URL(request.url);
-    const key = url.searchParams.get("key");
+    let key = url.searchParams.get("key");
 
     if (!key) {
         return new Response("Key bulunamadı!", { status: 400 });
     }
 
-    // users.json'dan verileri alıyoruz
+    // Eğer .m3u uzantısı yoksa ekle
+    if (!key.endsWith(".m3u")) {
+        return new Response("Lütfen geçerli bir key ile .m3u uzantısını ekleyin.", { status: 400 });
+    }
+
+    // Token'ı .m3u uzantısından önceki kısmı al
+    key = key.slice(0, -4); // Son 4 karakteri, yani .m3u'yu kesiyoruz
+
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
     const user = Object.values(usersData).find(user => user.secret_key === key);
@@ -18,37 +25,43 @@ async function handleRequest(request) {
         return new Response("Geçersiz key!", { status: 403 });
     }
 
-    // Tokenin süresi dolmuşsa
-    const currentDate = new Date();
-    const expireDate = new Date(user.expire_date);
-    if (currentDate > expireDate) {
-        return new Response("IPTV süreniz dolmuştur. Satın almak için mail atınız.", { status: 403 });
-    }
-
-    // Token kullanılmışsa, hata mesajı gönderiyoruz
+    // Token'ı daha önce kullanılmışsa
     if (user.used) {
         return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
     }
 
-    // Kullanıcıyı 'used: true' olarak güncelliyoruz
-    user.used = true;
+    // Türkiye saatiyle token süresi kontrolü
+    const currentDate = new Date();
+    const expireDate = new Date(user.expire_date);
+    const turkeyTime = new Date(currentDate.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
+    
+    if (turkeyTime > expireDate) {
+        return new Response("IPTV süreniz dolmuştur. Satın almak için mail atınız.", { status: 403 });
+    }
 
-    // users.json'ı güncellemek için yine veritabanına ya da dosyaya gönderme işlemi yapılabilir.
-    // Bu kısmı, gerçek dünyada kullanıcı verilerini kaydetmek için uygun bir veri saklama alanına yapmanız gerekecek.
-
-    // M3u dosyasını alıyoruz
+    // Eğer token geçerli ve kullanılmamışsa, m3u dosyasını alıyoruz ve raw formatında döndürüyoruz.
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    // M3u verisini raw formatında geri döndürüyoruz
+    // Token'ı kullanıldığını işaretle (used: true)
+    user.used = true;
+
+    // Kullanıcı verisini güncelle
+    await fetch(usersUrl, {
+        method: "PUT",  // Güncelleme yapmak için PUT kullanıyoruz
+        body: JSON.stringify(usersData),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
     return new Response(m3uData, {
         headers: {
-            "Content-Type": "application/vnd.apple.mpegurl"  // m3u formatı için Content-Type başlığı
+            "Content-Type": "text/plain",  // .m3u raw formatı için düz metin başlığı
         }
     });
 }
 
-// Cloudflare worker için fetch eventini dinliyoruz
 addEventListener("fetch", event => {
     event.respondWith(handleRequest(event.request));
 });
