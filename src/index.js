@@ -1,36 +1,40 @@
-export default {
-  async fetch(request) {
+const usersUrl = "https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/refs/heads/main/users.json";
+const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/main/playlist.m3u";
+
+async function handleRequest(request) {
     const url = new URL(request.url);
-    const ip = request.headers.get("cf-connecting-ip");
+    const ip = request.headers.get("CF-Connecting-IP");
     const key = url.searchParams.get("key");
 
-    if (!ip || !key) {
-      return new Response("Eksik parametre.", { status: 400 });
+    if (!key || !ip) {
+        return new Response("IP veya key bulunamadı!", { status: 400 });
     }
 
-    const response = await fetch("https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/main/users.json");
-    const users = await response.json();
+    // Kullanıcıları yükle
+    const usersResponse = await fetch(usersUrl);
+    const usersData = await usersResponse.json();
 
-    const user = users.find(u => u.ip === ip && u.key === key);
+    // IP'yi ve key'i doğrula
+    const user = usersData[ip];
 
-    if (!user) {
-      return new Response("Yetkisiz erişim.", { status: 403 });
+    if (!user || user.secret_key !== key) {
+        return new Response("Geçersiz key veya IP!", { status: 403 });
     }
 
-    const now = new Date();
-    const expiry = new Date(user.expires);
+    // Token'ın geçerlilik süresi dolmadığını kontrol et
+    const currentDate = new Date();
+    const expireDate = new Date(user.expire_date);
 
-    if (now > expiry) {
-      return new Response("Token süresi dolmuş.", { status: 403 });
+    if (currentDate > expireDate) {
+        return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    const m3u = await fetch("https://raw.githubusercontent.com/MDuymazz/sitem3u/main/playlist.m3u");
-    const text = await m3u.text();
-
-    return new Response(text, {
-      headers: {
-        "Content-Type": "audio/x-mpegurl"
-      }
+    // Her şey geçerliyse M3U linkini döndür
+    return new Response(m3uLink, {
+        headers: { "Content-Type": "application/vnd.apple.mpegurl" }
     });
-  }
-};
+}
+
+addEventListener("fetch", event => {
+    event.respondWith(handleRequest(event.request));
+});
