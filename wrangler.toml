@@ -1,14 +1,14 @@
 name = "m3u-token-secure"
-type = "javascript"
+compatibility_date = "2025-04-24"
 
 [build]
   command = "npm install"
 
+[[env]]
+workers_dev = true
+
 [env.production]
-  workers_dev = true
+workers_dev = false
 
-[account]
-  id = "a25472f8446d3aa3646070265fa5d6a60d9cd"
-
-[env.staging]
-  workers_dev = false
+[entry]
+main = "src/index.js"
