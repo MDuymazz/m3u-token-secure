@@ -33,7 +33,7 @@ async function handleRequest(request) {
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    // M3U dosyasını doğrudan IPTV player'ları için sunuyoruz
+    // GitHub raw formatında döndürüyoruz (M3U formatı)
     return new Response(m3uData, {
         headers: { "Content-Type": "application/x-mpegURL" }
     });
