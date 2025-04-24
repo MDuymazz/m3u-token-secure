@@ -1,12 +1,14 @@
 {
   "user1": {
     "secret_key": "calisanKey987",
-    "expire_date": "2025-04-24T19:00:00Z",
-    "used": true
+    "expire_date": "2025-04-25T12:00:00Z",
+    "used": false,
+    "owner": null
   },
   "user2": {
-    "secret_key": "mduymaz",
-    "expire_date": "2025-04-25T07:00:00Z",
-    "used": true
+    "secret_key": "denemeKey123",
+    "expire_date": "2025-04-30T15:00:00Z",
+    "used": false,
+    "owner": null
   }
 }
