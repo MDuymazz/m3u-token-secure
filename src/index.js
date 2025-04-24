@@ -3,48 +3,36 @@ const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/m
 
 async function handleRequest(request) {
     const url = new URL(request.url);
-    const keyParam = url.searchParams.get("key");
+    let key = url.searchParams.get("key");
 
-    if (!keyParam) {
+    if (!key) {
         return new Response("Key bulunamadı!", { status: 400 });
     }
 
+    // Eğer .m3u uzantısı yoksa ekle
+    if (!key.endsWith(".m3u")) {
+        return new Response("Lütfen geçerli bir key ile .m3u uzantısını ekleyin.", { status: 400 });
+    }
+
+    // Token'ı .m3u uzantısından önceki kısmı al
+    key = key.slice(0, -4); // Son 4 karakteri, yani .m3u'yu kesiyoruz
+
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
+    const user = Object.values(usersData).find(user => user.secret_key === key);
 
-    const userEntry = Object.entries(usersData).find(
-        ([, user]) => user.secret_key === keyParam
-    );
-
-    if (!userEntry) {
+    if (!user) {
         return new Response("Geçersiz key!", { status: 403 });
     }
 
-    const [, user] = userEntry;
-
-    // Türkiye saat dilimine çevrilmiş zaman
     const currentDate = new Date();
-    const turkeyTime = currentDate.getTime() + (3 * 60 * 60 * 1000); // UTC+3
-    const expireDate = new Date(user.expire_date).getTime();
+    const expireDate = new Date(user.expire_date);
 
+    // Türkiye saatiyle token süresi kontrolü
+    const turkeyTime = new Date(currentDate.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
     if (turkeyTime > expireDate) {
         return new Response("IPTV süreniz dolmuştur. Satın almak için mail atınız.", { status: 403 });
     }
-
-    // Token daha önce kullanıldıysa
-    if (user.used) {
-        return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
-    }
-
-    // Kullanılmadıysa, token'i işaretle
-    user.used = true;
-    
-    // Güncel kullanıcı bilgilerini json dosyasına kaydet
-    await fetch(usersUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(usersData),
-    });
 
     // Eğer token geçerli ise, m3u dosyasını alıyoruz ve raw formatında döndürüyoruz.
     const m3uResponse = await fetch(m3uLink);
