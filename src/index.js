@@ -12,14 +12,15 @@ async function handleRequest(request) {
 
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
-
     const user = usersData[ip];
+
     if (!user || user.secret_key !== key) {
         return new Response("Geçersiz key veya IP!", { status: 403 });
     }
 
     const currentDate = new Date();
     const expireDate = new Date(user.expire_date);
+
     if (currentDate > expireDate) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
@@ -27,10 +28,18 @@ async function handleRequest(request) {
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    return new Response(m3uData, {
+    const htmlResponse = `
+        <html>
+            <head><title>Playlist</title></head>
+            <body>
+                <pre>${m3uData}</pre>
+            </body>
+        </html>
+    `;
+
+    return new Response(htmlResponse, {
         headers: {
-            "Content-Type": "application/x-mpegURL",
-            "Access-Control-Allow-Origin": "*"
+            "Content-Type": "text/html"
         }
     });
 }
