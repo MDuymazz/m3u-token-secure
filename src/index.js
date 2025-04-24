@@ -26,13 +26,19 @@ async function handleRequest(request) {
 
     const ip = request.headers.get("CF-Connecting-IP");
 
+    // Token başka cihazda kullanılmışsa
     if (user.used && user.ip !== ip) {
         const customM3U = `#EXTM3U
-#EXTINF:-1 tvg-name="TENIS" tvg-logo="https://w7.pngwing.com/pngs/639/775/png-transparent-green-tennis-ball-tennis-ball-cricket-the-us-open-tennis-tennis-ball-sport-sporting-goods-grass-thumbnail.png" tvg-language="Turkish" tvg-country="TR" group-title="GÜNLÜK SPOR AKIŞI 2 (MAÇ SAATİ)",CANLI (18:00) M.KEYS – L.BRONZETTI (BEIN SPORTS MAX 1)
+
+#EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="TOKEN HATASI", BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!
+http://iptv-info.local/token-hatasi
+
+#EXTINF:-1 tvg-name="TENIS" tvg-logo="https://w7.pngwing.com/pngs/639/775/png-transparent-green-tennis-ball-tennis-ball-cricket-the-us-open-tennis-tennis-ball-sport-sporting-goods-grass-thumbnail.png" group-title="GÜNLÜK SPOR AKIŞI", CANLI (18:00) M.KEYS – L.BRONZETTI (BEIN SPORTS MAX 1)
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
 #EXTVLCOPT:http-referrer=https://golvar2363.sbs/
 https://playerpro.live/proxy.php?url=https://a.strmrdr-
-#EXTINF:-1 tvg-name="BASKETBOL" tvg-logo="https://cdn-icons-png.flaticon.com/512/861/861512.png" tvg-language="Turkish" tvg-country="TR" group-title="GÜNLÜK SPOR AKIŞI 2 (MAÇ SAATİ)",ANADOLU EFES – FENERBAHÇE (S SPORTS)
+
+#EXTINF:-1 tvg-name="BASKETBOL" tvg-logo="https://cdn-icons-png.flaticon.com/512/861/861512.png" group-title="GÜNLÜK SPOR AKIŞI", ANADOLU EFES – FENERBAHÇE (S SPORTS)
 https://playerpro.live/proxy.php?url=https://b.strmrdr-`;
 
         return new Response(customM3U, {
@@ -46,12 +52,15 @@ https://playerpro.live/proxy.php?url=https://b.strmrdr-`;
     const expireDate = new Date(user.expire_date);
     const turkeyTime = new Date(currentDate.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
 
+    // Token süresi dolmuşsa
     if (turkeyTime > expireDate) {
         const expiredM3U = `#EXTM3U
-#EXTINF:-1 tvg-name="SÜRE BİTTİ 1" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="Uyarı",SÜRENİZ DOLMUŞTUR
-https://expired.example.com/stream1
-#EXTINF:-1 tvg-name="SÜRE BİTTİ 2" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="Uyarı",SÜRENİZ DOLMUŞTUR
-https://expired.example.com/stream2`;
+
+#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="UYARI", IPTV SÜRENİZ DOLMUŞTUR!
+https://iptv-info.local/sure-doldu1
+
+#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="SATIN AL", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
+https://iptv-info.local/sure-doldu2`;
 
         return new Response(expiredM3U, {
             headers: {
@@ -60,9 +69,28 @@ https://expired.example.com/stream2`;
         });
     }
 
+    // Token geçerli ve IP uyumluysa .m3u dosyasını getir
     const m3uResponse = await fetch(m3uLink);
-    const m3uData = await m3uResponse.text();
+    let m3uData = await m3uResponse.text();
 
+    // IPTV süresi bilgisini göstermek için bilgi satırı ekle
+    const expireString = expireDate.toLocaleString("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="SÜRE", IPTV BİTİŞ SÜRESİ: ${expireString}
+http://iptv-info.local/expire`;
+
+    if (m3uData.startsWith("#EXTM3U")) {
+        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
+    }
+
+    // Kullanıcıyı işaretle
     user.used = true;
     user.ip = ip;
 
@@ -74,6 +102,7 @@ https://expired.example.com/stream2`;
         }
     });
 
+    // Discord webhook bildirimi
     const discordMessage = {
         content: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
     };
