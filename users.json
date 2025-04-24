@@ -8,7 +8,7 @@
   "user2": {
     "secret_key": "testKey1500",
     "expire_date": "2025-04-25T07:00:00Z",
-    "used": false,
-    "ip": ""
+    "used": true,
+    "ip": "78.169.70.244"
   }
 }
