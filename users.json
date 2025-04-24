@@ -1,12 +1,12 @@
 {
-  "103.228.242.184": {
-    "name": "Manuel giriş",
-    "secret_key": "calisanKey987.m3u",
-    "expire_date": "2025-04-30"
+  "user1": {
+    "secret_key": "calisanKey987",
+    "expire_date": "2025-04-24T12:00:00Z",
+    "used": false
   },
-  "192.168.0.100": {
-    "name": "Test Kullanıcı",
-    "secret_key": "calismayanKey456",
-    "expire_date": "2025-04-30"
+  "user2": {
+    "secret_key": "testKey1500",
+    "expire_date": "2025-04-25T07:00:00Z",
+    "used": false
   }
 }
