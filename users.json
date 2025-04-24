@@ -2,7 +2,7 @@
   "user1": {
     "secret_key": "calisanKey987",
     "expire_date": "2025-04-24T19:00:00Z",
-    "used": true
+    "used": false
   },
   "user2": {
     "secret_key": "testKey1500",
