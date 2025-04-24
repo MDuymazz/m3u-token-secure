@@ -40,7 +40,7 @@ async function handleRequest(request) {
 
     return new Response(m3uData, {
         headers: {
-            "Content-Type": "application/vnd.apple.mpegurl",  // m3u formatı için Content-Type başlığı
+            "Content-Type": "text/plain",  // .m3u raw formatı için düz metin başlığı
         }
     });
 }
