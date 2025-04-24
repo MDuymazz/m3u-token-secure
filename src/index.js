@@ -29,25 +29,8 @@ async function handleRequest(request) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    // M3U dosyasını al
-    const m3uResponse = await fetch(m3uLink);
-    const m3uData = await m3uResponse.text();
-
-    // M3U içeriğini HTML olarak döndür
-    const htmlResponse = `
-        <html>
-            <head>
-                <title>IPTV M3U Playlist</title>
-            </head>
-            <body>
-                <pre>${m3uData}</pre>
-            </body>
-        </html>
-    `;
-
-    return new Response(htmlResponse, {
-        headers: { "Content-Type": "text/html" }
-    });
+    // Token doğru ve geçerli, kullanıcılara M3U dosyasına yönlendirme yapıyoruz
+    return Response.redirect(m3uLink, 302);  // 302, geçici yönlendirme
 }
 
 addEventListener("fetch", event => {
