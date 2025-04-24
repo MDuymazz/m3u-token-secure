@@ -10,7 +10,7 @@
     "expire_date": "2025-04-25T07:00:00Z",
     "used": true,
     "ip": "78.169.70.244"
-  }
+  },
   "user3": {
     "secret_key": "testKey150",
     "expire_date": "2025-04-25T07:00:00Z",
