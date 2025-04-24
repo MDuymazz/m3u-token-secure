@@ -1,5 +1,5 @@
-const usersUrl = "https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/refs/heads/main/users.json";  // JSON dosyasına ulaşılacak link
-const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/main/playlist.m3u";  // Playlist.m3u'ya ulaşılacak link
+const usersUrl = "https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/refs/heads/main/users.json";
+const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/main/playlist.m3u";
 
 async function handleRequest(request) {
     const url = new URL(request.url);
@@ -9,13 +9,12 @@ async function handleRequest(request) {
         return new Response("Key bulunamadı!", { status: 400 });
     }
 
-    // Eğer .m3u uzantısı yoksa ekle
     if (!key.endsWith(".m3u")) {
-        return new Response("Lütfen geçerli bir key ile .m3u uzantısını ekleyin.", { status: 400 });
+        return new Response("Lütfen key sonuna .m3u ekleyin!", { status: 400 });
     }
 
-    // Token'ı .m3u uzantısından önceki kısmı al
-    key = key.slice(0, -4); // Son 4 karakteri, yani .m3u'yu kesiyoruz
+    key = key.slice(0, -4); // .m3u uzantısını temizle
+    const ip = request.headers.get("CF-Connecting-IP");
 
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
@@ -25,39 +24,28 @@ async function handleRequest(request) {
         return new Response("Geçersiz key!", { status: 403 });
     }
 
-    // Token'ı daha önce kullanılmışsa
-    if (user.used) {
-        return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
-    }
-
-    // Türkiye saatiyle token süresi kontrolü
-    const currentDate = new Date();
+    const turkeyTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
     const expireDate = new Date(user.expire_date);
-    const turkeyTime = new Date(currentDate.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
-    
+
     if (turkeyTime > expireDate) {
         return new Response("IPTV süreniz dolmuştur. Satın almak için mail atınız.", { status: 403 });
     }
 
-    // Eğer token geçerli ve kullanılmamışsa, m3u dosyasını alıyoruz ve raw formatında döndürüyoruz.
+    // Kullanım kontrolü
+    if (user.used && user.owner !== ip) {
+        return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
+    }
+
+    // M3U dosyasını al
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    // Token'ı kullanıldığını işaretle (used: true)
-    user.used = true;
-
-    // Kullanıcı verisini güncelle
-    await fetch(usersUrl, {
-        method: "PUT",  // Güncelleme yapmak için PUT kullanıyoruz
-        body: JSON.stringify(usersData),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-
+    // Eğer ilk kez kullanılıyorsa, log tutmak istersen Cloudflare Logpush kullanılabilir (manuel)
+    // Burada dosya yazılmaz, sadece çalışır.
+    
     return new Response(m3uData, {
         headers: {
-            "Content-Type": "text/plain",  // .m3u raw formatı için düz metin başlığı
+            "Content-Type": "text/plain",
         }
     });
 }
