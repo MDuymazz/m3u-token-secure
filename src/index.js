@@ -4,27 +4,20 @@ const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/m
 async function handleRequest(request) {
     const url = new URL(request.url);
     const ip = request.headers.get("CF-Connecting-IP");
-    let key = url.searchParams.get("key");
+    const key = url.searchParams.get("key");
 
     if (!key || !ip) {
         return new Response("IP veya key bulunamadı!", { status: 400 });
     }
 
-    // .m3u uzantısını ekle
-    if (!key.endsWith('.m3u')) {
-        key = key + '.m3u'; // Eğer key sonu .m3u değilse ekleyelim
-    }
-
-    // Kullanıcıları yükle
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
     const user = usersData[ip];
 
-    if (!user || user.secret_key !== key.slice(0, -4)) { // Sonundaki .m3u'yu çıkarıyoruz
+    if (!user || user.secret_key !== key) {
         return new Response("Geçersiz key veya IP!", { status: 403 });
     }
 
-    // Token'ın geçerlilik süresi dolmadığını kontrol et
     const currentDate = new Date();
     const expireDate = new Date(user.expire_date);
 
@@ -32,14 +25,10 @@ async function handleRequest(request) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    // M3U dosyasını raw formatında al
-    const m3uResponse = await fetch(m3uLink);
-    const m3uData = await m3uResponse.text();
+    // Eğer token geçerli ise, m3u dosyasının linkine yönlendirme yapıyoruz.
+    const redirectUrl = `https://m3u-token-secure.mm-duymazz.workers.dev/?key=${key}.m3u`; // Sonuna ".m3u" ekliyoruz.
 
-    // M3U dosyasını raw formatında IPTV'ye uygun şekilde döndürüyoruz
-    return new Response(m3uData, {
-        headers: { "Content-Type": "application/x-mpegURL" }
-    });
+    return Response.redirect(redirectUrl, 302);  // 302 ile yönlendirme yapıyoruz.
 }
 
 addEventListener("fetch", event => {
