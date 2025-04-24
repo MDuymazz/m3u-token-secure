@@ -33,21 +33,9 @@ async function handleRequest(request) {
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    // M3U içeriğini HTML olarak döndür
-    const htmlResponse = `
-        <html>
-            <head>
-                <title>IPTV M3U Playlist</title>
-            </head>
-            <body>
-                <h1>Geçerli M3U Playlist İçeriği</h1>
-                <pre>${m3uData}</pre>
-            </body>
-        </html>
-    `;
-
-    return new Response(htmlResponse, {
-        headers: { "Content-Type": "text/html" }
+    // M3U içeriğini düz metin olarak döndür
+    return new Response(m3uData, {
+        headers: { "Content-Type": "application/x-mpegURL" }
     });
 }
 
