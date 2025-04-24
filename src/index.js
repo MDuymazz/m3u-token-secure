@@ -10,32 +10,28 @@ async function handleRequest(request) {
         return new Response("IP veya key bulunamadı!", { status: 400 });
     }
 
-    // Kullanıcıları yükle
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
 
-    // IP'yi ve key'i doğrula
     const user = usersData[ip];
-
     if (!user || user.secret_key !== key) {
         return new Response("Geçersiz key veya IP!", { status: 403 });
     }
 
-    // Token'ın geçerlilik süresi dolmadığını kontrol et
     const currentDate = new Date();
     const expireDate = new Date(user.expire_date);
-
     if (currentDate > expireDate) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    // M3U dosyasını al
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
-    // GitHub raw formatında döndürüyoruz (M3U formatı)
     return new Response(m3uData, {
-        headers: { "Content-Type": "application/x-mpegURL" }
+        headers: {
+            "Content-Type": "application/x-mpegURL",
+            "Access-Control-Allow-Origin": "*"
+        }
     });
 }
 
