@@ -1,9 +1,14 @@
 [
   {
-    "name": "MDuymaz Manuel Erişim",
-    "secret": "superGizliAnahtar123",
-    "expires": 1793421600,
-    "ip": "111.222.333.444"
+    "name": "MDuymazz",
+    "ip": "103.228.242.184",
+    "key": "calisanKey987",
+    "expires": "2025-05-01"
+  },
+  {
+    "name": "FakeUser",
+    "ip": "1.2.3.4",
+    "key": "calismayanKey123",
+    "expires": "2025-05-01"
   }
 ]
-
