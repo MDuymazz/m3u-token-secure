@@ -3,52 +3,56 @@ const m3uLink = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/m
 
 async function handleRequest(request) {
     const url = new URL(request.url);
-    const rawKey = url.searchParams.get("key");
+    const keyParam = url.searchParams.get("key");
 
-    if (!rawKey) {
+    if (!keyParam) {
         return new Response("Key bulunamadı!", { status: 400 });
     }
-
-    const key = rawKey.replace(".m3u", "");
 
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
 
-    let userEntry;
-    for (const user in usersData) {
-        if (usersData[user].secret_key === key) {
-            userEntry = usersData[user];
-            break;
-        }
-    }
+    const userEntry = Object.entries(usersData).find(
+        ([, user]) => user.secret_key === keyParam
+    );
 
     if (!userEntry) {
-        return new Response("Geçersiz token!", { status: 403 });
+        return new Response("Geçersiz key!", { status: 403 });
     }
 
-    const currentDate = new Date();
-    const expireDate = new Date(userEntry.expire_date);
+    const [, user] = userEntry;
 
-    if (currentDate > expireDate) {
+    // Türkiye saat dilimine çevrilmiş zaman
+    const currentDate = new Date();
+    const turkeyTime = currentDate.getTime() + (3 * 60 * 60 * 1000); // UTC+3
+    const expireDate = new Date(user.expire_date).getTime();
+
+    if (turkeyTime > expireDate) {
         return new Response("IPTV süreniz dolmuştur. Satın almak için mail atınız.", { status: 403 });
     }
 
-    if (userEntry.used && rawKey.endsWith(".m3u")) {
+    // Token daha önce kullanıldıysa
+    if (user.used) {
         return new Response("Bu token bir cihazda kullanıldı. Lütfen satın almak için mail atınız.", { status: 403 });
     }
 
-    if (!userEntry.used && rawKey.endsWith(".m3u")) {
-        userEntry.used = true;
+    // Kullanılmadıysa, token'i işaretle
+    user.used = true;
+    
+    // Güncel kullanıcı bilgilerini json dosyasına kaydet
+    await fetch(usersUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(usersData),
+    });
 
-        // Not: Bu örnek sadece bellek üzerinde değiştiriyor, gerçek kullanımda GitHub API ya da KV Store gerekir.
-    }
-
+    // Eğer token geçerli ise, m3u dosyasını alıyoruz ve raw formatında döndürüyoruz.
     const m3uResponse = await fetch(m3uLink);
     const m3uData = await m3uResponse.text();
 
     return new Response(m3uData, {
         headers: {
-            "Content-Type": "application/vnd.apple.mpegurl"
+            "Content-Type": "application/vnd.apple.mpegurl",  // m3u formatı için Content-Type başlığı
         }
     });
 }
