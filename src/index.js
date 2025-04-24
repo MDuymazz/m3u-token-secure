@@ -28,10 +28,8 @@ async function handleRequest(request) {
 
     if (user.used && user.ip !== ip) {
         const customM3U = `#EXTM3U
-#EXTINF:-1 tvg-name="TENIS" tvg-logo="https://w7.pngwing.com/pngs/639/775/png-transparent-green-tennis-ball-tennis-ball-cricket-the-us-open-tennis-tennis-ball-sport-sporting-goods-grass-thumbnail.png" tvg-language="Turkish" tvg-country="TR" group-title="GÜNLÜK SPOR AKIŞI 2 (MAÇ SAATİ)",CANLI (18:00) M.KEYS – L.BRONZETTI (BEIN SPORTS MAX 1)
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)
-#EXTVLCOPT:http-referrer=https://golvar2363.sbs/
-https://playerpro.live/proxy.php?url=https://a.strmrdr-`;
+#EXTINF:-1 tvg-name="" tvg-logo="" tvg-language="Turkish" tvg-country="TR" group-title="TOKEN BAŞKA CİHAZDA KULLANILDI",DEVAM EDİLEMİYOR....
+https://playerpro.live/proxy.php?url=https://a.strmrdr-.m3u8`;
 
         return new Response(customM3U, {
             headers: {
