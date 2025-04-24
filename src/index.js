@@ -29,8 +29,14 @@ async function handleRequest(request) {
         return new Response("Token süresi dolmuş!", { status: 403 });
     }
 
-    // Token doğru ve geçerli, kullanıcılara M3U dosyasına yönlendirme yapıyoruz
-    return Response.redirect(m3uLink, 302);  // 302, geçici yönlendirme
+    // M3U dosyasını al
+    const m3uResponse = await fetch(m3uLink);
+    const m3uData = await m3uResponse.text();
+
+    // M3U içeriğini doğrudan kullanıcıya döndürüyoruz
+    return new Response(m3uData, {
+        headers: { "Content-Type": "application/x-mpegURL" }  // IPTV playerlerinin anlayacağı format
+    });
 }
 
 addEventListener("fetch", event => {
