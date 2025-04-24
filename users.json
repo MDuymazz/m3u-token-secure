@@ -8,8 +8,8 @@
   "user1": {
     "secret_key": "temiz",
     "expire_date": "2025-04-24T23:00:00Z",
-    "used": false,
-    "ip": ""
+    "used": true,
+    "ip": "10.0.0.0"
   },
   "user2": {
     "secret_key": "temiz1",
