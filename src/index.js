@@ -1,42 +1,36 @@
 export default {
   async fetch(request) {
-    const url = new URL(request.url)
-    const token = url.searchParams.get("token")
-    const expires = url.searchParams.get("expires")
-    const ip = request.headers.get("cf-connecting-ip")
+    const url = new URL(request.url);
+    const ip = request.headers.get("cf-connecting-ip");
+    const key = url.searchParams.get("key");
 
-    const users = await fetchUsers()
+    if (!ip || !key) {
+      return new Response("Eksik parametre.", { status: 400 });
+    }
 
-    const user = users.find(u => u.ip === ip && u.expires > Date.now() / 1000)
+    const response = await fetch("https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/main/users.json");
+    const users = await response.json();
+
+    const user = users.find(u => u.ip === ip && u.key === key);
 
     if (!user) {
-      return new Response("Erişim reddedildi", { status: 403 })
+      return new Response("Yetkisiz erişim.", { status: 403 });
     }
 
-    const raw = `${ip}-${expires}-${user.secret}`
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw))
-    const expectedToken = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("")
+    const now = new Date();
+    const expiry = new Date(user.expires);
 
-    if (token !== expectedToken) {
-      return new Response("Geçersiz token", { status: 403 })
+    if (now > expiry) {
+      return new Response("Token süresi dolmuş.", { status: 403 });
     }
 
-    const githubUrl = "https://raw.githubusercontent.com/MDuymazz/sitem3u/refs/heads/main/playlist.m3u"
+    const m3u = await fetch("https://raw.githubusercontent.com/MDuymazz/sitem3u/main/playlist.m3u");
+    const text = await m3u.text();
 
-    try {
-      const response = await fetch(githubUrl)
-      const m3u = await response.text()
-      return new Response(m3u, {
-        headers: { "Content-Type": "application/x-mpegURL" }
-      })
-    } catch (e) {
-      return new Response("Dosya yüklenemedi", { status: 500 })
-    }
+    return new Response(text, {
+      headers: {
+        "Content-Type": "audio/x-mpegurl"
+      }
+    });
   }
-}
-
-async function fetchUsers() {
-  const res = await fetch("https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/main/users.json")
-  return await res.json()
-}
-
+};
