@@ -1,14 +1,12 @@
-[
-  {
-    "name": "MDuymazz",
-    "ip": "103.228.242.184",
-    "key": "calisanKey987",
-    "expires": "2025-05-01"
+{
+  "103.228.242.184": {
+    "name": "Manuel giriş",
+    "secret_key": "calisanKey987",
+    "expire_date": "2025-04-30"
   },
-  {
-    "name": "FakeUser",
-    "ip": "1.2.3.4",
-    "key": "calismayanKey123",
-    "expires": "2025-05-01"
+  "192.168.0.100": {
+    "name": "Test Kullanıcı",
+    "secret_key": "calismayanKey456",
+    "expire_date": "2025-04-30"
   }
-]
+}
