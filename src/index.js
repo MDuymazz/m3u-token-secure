@@ -25,82 +25,16 @@ async function handleRequest(request) {
     }
 
     const ip = request.headers.get("CF-Connecting-IP");
-
-    // Token başka cihazda kullanılmışsa
-    if (user.used && user.ip !== ip) {
-        const customM3U = `#EXTM3U
-
-#EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!", LÜTFEN DESTEK ALINIZ...
-http://iptv-info.local/token-hatasi`;
-
-        return new Response(customM3U, {
-            headers: {
-                "Content-Type": "text/plain"
-            }
-        });
-    }
-
     const currentDate = new Date();
-    const expireDate = new Date(user.expire_date); // UTC formatındaki expire_date
+    const expireDate = new Date(user.expire_date);
     const turkeyTime = new Date(expireDate.toLocaleString("en-US", { timeZone: user.timezone || "Europe/Istanbul" }));
 
-    // Token süresi dolmuşsa
-    if (currentDate > expireDate) {
-        const expiredM3U = `#EXTM3U
-
-#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="IPTV SÜRENİZ DOLMUŞTUR!", IPTV SÜRENİZ DOLMUŞTUR!
-https://iptv-info.local/sure-doldu1
-
-#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
-https://iptv-info.local/sure-doldu2`;
-
-        return new Response(expiredM3U, {
-            headers: {
-                "Content-Type": "text/plain"
-            }
-        });
-    }
-
-    // IPTV bitiş süresi bilgisini yerel saat diliminde gösterme
-    const expireString = turkeyTime.toLocaleString("tr-TR", {
-        timeZone: user.timezone || "Europe/Istanbul", // Kullanıcı zaman dilimine göre
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-
-    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
-http://iptv-info.local/expire`;
-
-    // M3U verisini alıyoruz ve IPTV bitiş süresini ekliyoruz
-    const m3uResponse = await fetch(m3uLink);
-    let m3uData = await m3uResponse.text();
-
-    if (m3uData.startsWith("#EXTM3U")) {
-        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
-    }
-
-    // Kullanıcıyı işaretle
-    user.used = true;
-    user.ip = ip;
-
-    await fetch(usersUrl, {
-        method: "PUT",
-        body: JSON.stringify(usersData),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-
-    // Discord webhook bildirimi
     const discordMessage = {
         embeds: [
             {
                 title: "Token Durumu",
                 description: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
-                color: 3066993,  // Varsayılan renk (Yeşil)
+                color: 3066993,
                 fields: [
                     {
                         name: "Kullanıcı Bilgileri",
@@ -118,40 +52,101 @@ http://iptv-info.local/expire`;
         ]
     };
 
-    // Token süresi bitmişse, kırmızı renk
-    if (currentDate > expireDate) {
-        discordMessage.embeds[0].color = 15158332;  // Kırmızı renk
-        discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
-    }
-
-    // Token başka bir IP adresi üzerinden kullanıldığında, sarı renk
-    else if (user.used && user.ip !== ip) {
-        discordMessage.embeds[0].color = 16776960;  // Sarı renk
+    // Token başka cihazda kullanılmışsa
+    if (user.used && user.ip !== ip) {
+        discordMessage.embeds[0].color = 16776960;
         discordMessage.embeds[0].description = `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
+
+        const customM3U = `#EXTM3U
+
+#EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!", LÜTFEN DESTEK ALINIZ...
+http://iptv-info.local/token-hatasi`;
+
+        return new Response(customM3U, {
+            headers: {
+                "Content-Type": "text/plain"
+            }
+        });
     }
 
-    // Token ve IP aynı ise ve 1 haftadan az kalmışsa, gri renk
-    else if (user.used && user.ip === ip) {
-        const timeDiff = expireDate - currentDate; // Kalan süre
-        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 1 hafta = 7 gün
+    // Token süresi dolmuşsa
+    if (currentDate > expireDate) {
+        discordMessage.embeds[0].color = 15158332;
+        discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
+
+        const expiredM3U = `#EXTM3U
+
+#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="IPTV SÜRENİZ DOLMUŞTUR!", IPTV SÜRENİZ DOLMUŞTUR!
+https://iptv-info.local/sure-doldu1
+
+#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
+https://iptv-info.local/sure-doldu2`;
+
+        return new Response(expiredM3U, {
+            headers: {
+                "Content-Type": "text/plain"
+            }
+        });
+    }
+
+    // Geri kalan senaryolar için embed güncellemesi
+    if (user.used && user.ip === ip) {
+        const timeDiff = expireDate - currentDate;
+        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
         if (timeDiff <= oneWeekInMs) {
-            discordMessage.embeds[0].color = 808080;  // Gri renk
+            discordMessage.embeds[0].color = 808080;
             discordMessage.embeds[0].description = `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`;
         }
-    }
-
-    // Yeni token ve aynı IP ise, siyah renk
-    else if (!user.used && user.ip === ip) {
-        discordMessage.embeds[0].color = 0x000000;  // Siyah renk
+    } else if (!user.used && user.ip === ip) {
+        discordMessage.embeds[0].color = 0x000000;
         discordMessage.embeds[0].description = `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
-    }
-
-    // Yeni token ve yeni IP ise, beyaz renk
-    else if (!user.used && user.ip !== ip) {
-        discordMessage.embeds[0].color = 0xFFFFFF;  // Beyaz renk
+    } else if (!user.used && user.ip !== ip) {
+        discordMessage.embeds[0].color = 0xFFFFFF;
         discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
     }
 
+    const expireString = turkeyTime.toLocaleString("tr-TR", {
+        timeZone: user.timezone || "Europe/Istanbul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
+http://iptv-info.local/expire`;
+
+    const m3uResponse = await fetch(m3uLink);
+    let m3uData = await m3uResponse.text();
+
+    if (m3uData.startsWith("#EXTM3U")) {
+        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
+    }
+
+    // Kullanıcıyı işaretle ve kaydet
+    user.used = true;
+    user.ip = ip;
+
+    await fetch(usersUrl, {
+        method: "PUT",
+        body: JSON.stringify(usersData),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    // Discord mesajı gönder
     await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
