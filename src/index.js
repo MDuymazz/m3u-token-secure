@@ -54,35 +54,6 @@ https://iptv-info.local/sure-doldu1
 #EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
 https://iptv-info.local/sure-doldu2`;
 
-        // Discord bildirimini kırmızı yapalım (Token süresi dolmuşsa)
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Durumu",
-                    description: `Token ${key} süresi dolmuş.\nIP: ${ip}`,
-                    color: 15158332,  // Kırmızı renk
-                    fields: [
-                        {
-                            name: "Kullanıcı Bilgileri",
-                            value: `Token: ${key}\nIP: ${ip}`,
-                        },
-                        {
-                            name: "İlgili Linkler",
-                            value: "[Destek Alın](http://iptv-info.local/token-hatasi)\n[Süre Doldu Linki](http://iptv-info.local/sure-doldu1)"
-                        }
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                    },
-                }
-            ]
-        };
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
-
         return new Response(expiredM3U, {
             headers: {
                 "Content-Type": "text/plain"
@@ -90,31 +61,73 @@ https://iptv-info.local/sure-doldu2`;
         });
     }
 
+    // IPTV bitiş süresi bilgisini yerel saat diliminde gösterme
+    const expireString = turkeyTime.toLocaleString("tr-TR", {
+        timeZone: user.timezone || "Europe/Istanbul", // Kullanıcı zaman dilimine göre
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
+http://iptv-info.local/expire`;
+
+    // M3U verisini alıyoruz ve IPTV bitiş süresini ekliyoruz
+    const m3uResponse = await fetch(m3uLink);
+    let m3uData = await m3uResponse.text();
+
+    if (m3uData.startsWith("#EXTM3U")) {
+        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
+    }
+
+    // Kullanıcıyı işaretle
+    user.used = true;
+    user.ip = ip;
+
+    await fetch(usersUrl, {
+        method: "PUT",
+        body: JSON.stringify(usersData),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    // Discord webhook bildirimi
+    const discordMessage = {
+        embeds: [
+            {
+                title: "Token Durumu",
+                description: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
+                color: 3066993,  // Varsayılan renk (Yeşil)
+                fields: [
+                    {
+                        name: "Kullanıcı Bilgileri",
+                        value: `Token: ${key}\nIP: ${ip}`,
+                    },
+                    {
+                        name: "İlgili Linkler",
+                        value: "[Destek Alın](http://iptv-info.local/token-hatasi)\n[Süre Doldu Linki](http://iptv-info.local/sure-doldu1)"
+                    }
+                ],
+                footer: {
+                    text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
+                },
+            }
+        ]
+    };
+
+    // Token süresi bitmişse, kırmızı renk
+    if (currentDate > expireDate) {
+        discordMessage.embeds[0].color = 15158332;  // Kırmızı renk
+        discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
+    }
+
     // Token başka bir IP adresi üzerinden kullanıldığında, sarı renk
     else if (user.used && user.ip !== ip) {
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Durumu",
-                    description: `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`,
-                    color: 16776960,  // Sarı renk
-                    fields: [
-                        {
-                            name: "Kullanıcı Bilgileri",
-                            value: `Token: ${key}\nIP: ${ip}`,
-                        },
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                    },
-                }
-            ]
-        };
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
+        discordMessage.embeds[0].color = 16776960;  // Sarı renk
+        discordMessage.embeds[0].description = `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`;
     }
 
     // Token ve IP aynı ise ve 1 haftadan az kalmışsa, gri renk
@@ -122,112 +135,28 @@ https://iptv-info.local/sure-doldu2`;
         const timeDiff = expireDate - currentDate; // Kalan süre
         const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 1 hafta = 7 gün
         if (timeDiff <= oneWeekInMs) {
-            const discordMessage = {
-                embeds: [
-                    {
-                        title: "Token Durumu",
-                        description: `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`,
-                        color: 808080,  // Gri renk
-                        fields: [
-                            {
-                                name: "Kullanıcı Bilgileri",
-                                value: `Token: ${key}\nIP: ${ip}`,
-                            },
-                        ],
-                        footer: {
-                            text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                        },
-                    }
-                ]
-            };
-            await fetch(webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(discordMessage),
-            });
+            discordMessage.embeds[0].color = 808080;  // Gri renk
+            discordMessage.embeds[0].description = `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`;
         }
     }
 
     // Yeni token ve aynı IP ise, siyah renk
     else if (!user.used && user.ip === ip) {
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Durumu",
-                    description: `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`,
-                    color: 0x000000,  // Siyah renk
-                    fields: [
-                        {
-                            name: "Kullanıcı Bilgileri",
-                            value: `Token: ${key}\nIP: ${ip}`,
-                        },
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                    },
-                }
-            ]
-        };
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
+        discordMessage.embeds[0].color = 0x000000;  // Siyah renk
+        discordMessage.embeds[0].description = `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
     }
 
     // Yeni token ve yeni IP ise, beyaz renk
     else if (!user.used && user.ip !== ip) {
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Durumu",
-                    description: `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`,
-                    color: 0xFFFFFF,  // Beyaz renk
-                    fields: [
-                        {
-                            name: "Kullanıcı Bilgileri",
-                            value: `Token: ${key}\nIP: ${ip}`,
-                        },
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                    },
-                }
-            ]
-        };
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
+        discordMessage.embeds[0].color = 0xFFFFFF;  // Beyaz renk
+        discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
     }
 
-    // Yeşil renkli bildirim (Token kullanılmamış ve doğru IP)
-    if (!user.used && user.ip === ip) {
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Durumu",
-                    description: `Token ${key} başarıyla kullanıldı.\nIP: ${ip}`,
-                    color: 3066993,  // Yeşil renk
-                    fields: [
-                        {
-                            name: "Kullanıcı Bilgileri",
-                            value: `Token: ${key}\nIP: ${ip}`,
-                        },
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
-                    },
-                }
-            ]
-        };
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
-    }
+    await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(discordMessage),
+    });
 
     return new Response(m3uData, {
         headers: {
