@@ -44,23 +44,6 @@ http://iptv-info.local/token-hatasi`;
     const expireDate = new Date(user.expire_date); // UTC formatındaki expire_date
     const turkeyTime = new Date(expireDate.toLocaleString("en-US", { timeZone: user.timezone || "Europe/Istanbul" }));
 
-    // Token süresi dolmuşsa
-    if (currentDate > expireDate) {
-        const expiredM3U = `#EXTM3U
-
-#EXTINF:-1 tvg-name="SÜRE BİTTİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1062/1062832.png" group-title="IPTV SÜRENİZ DOLMUŞTUR!", IPTV SÜRENİZ DOLMUŞTUR!
-https://iptv-info.local/sure-doldu1
-
-#EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
-https://iptv-info.local/sure-doldu2`;
-
-        return new Response(expiredM3U, {
-            headers: {
-                "Content-Type": "text/plain"
-            }
-        });
-    }
-
     // IPTV bitiş süresi bilgisini yerel saat diliminde gösterme
     const expireString = turkeyTime.toLocaleString("tr-TR", {
         timeZone: user.timezone || "Europe/Istanbul", // Kullanıcı zaman dilimine göre
