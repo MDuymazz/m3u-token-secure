@@ -115,7 +115,7 @@ https://iptv-info.local/sure-doldu2`;
     }
 
     // expire_date'yi olduğu gibi göstereceğiz
-    const expireString = user.expire_date.slice(0, 19);  // Doğrudan expire_date'i kullanıyoruz
+    const expireString = user.expire_date;  // expire_date'yi olduğu gibi kullanıyoruz
 
     const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
 http://iptv-info.local/expire`;
