@@ -54,7 +54,7 @@ https://iptv-info.local/sure-doldu1
 #EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
 https://iptv-info.local/sure-doldu2`;
 
-        // Kırmızı renk için bildirim gönder
+        // Discord bildirimini kırmızı yapalım (Token süresi dolmuşsa)
         const discordMessage = {
             embeds: [
                 {
@@ -183,6 +183,33 @@ https://iptv-info.local/sure-doldu2`;
                     title: "Token Durumu",
                     description: `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`,
                     color: 0xFFFFFF,  // Beyaz renk
+                    fields: [
+                        {
+                            name: "Kullanıcı Bilgileri",
+                            value: `Token: ${key}\nIP: ${ip}`,
+                        },
+                    ],
+                    footer: {
+                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
+                    },
+                }
+            ]
+        };
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
+    }
+
+    // Yeşil renkli bildirim (Token kullanılmamış ve doğru IP)
+    if (!user.used && user.ip === ip) {
+        const discordMessage = {
+            embeds: [
+                {
+                    title: "Token Durumu",
+                    description: `Token ${key} başarıyla kullanıldı.\nIP: ${ip}`,
+                    color: 3066993,  // Yeşil renk
                     fields: [
                         {
                             name: "Kullanıcı Bilgileri",
