@@ -96,8 +96,45 @@ http://iptv-info.local/expire`;
 
     // Discord webhook bildirimi
     const discordMessage = {
-        content: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
+        embeds: [
+            {
+                title: "Token Kullanıldı",
+                description: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
+                color: 3066993,  // Başarılı kullanım yeşil renk
+                fields: [
+                    {
+                        name: "Kullanıcı Bilgileri",
+                        value: `Token: ${key}\nIP: ${ip}`,
+                    },
+                    {
+                        name: "İlgili Linkler",
+                        value: "[Destek Alın](http://iptv-info.local/token-hatasi)\n[Süre Doldu Linki](http://iptv-info.local/sure-doldu1)"
+                    }
+                ],
+                footer: {
+                    text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`,
+                },
+            }
+        ]
     };
+
+    // Eğer kullanıcı aynı token'ı aynı IP ile kullanırsa
+    if (user.used && user.ip === ip) {
+        discordMessage.embeds[0].color = 3447003;  // Mavi renk: Tekrar kullanım
+        discordMessage.embeds[0].description = `Token ${key} aynı IP üzerinden tekrar kullanıldı.\nIP: ${ip}`;
+    }
+
+    // Token süresi bitmişse
+    if (currentDate > expireDate) {
+        discordMessage.embeds[0].color = 15158332;  // Kırmızı renk: Süre dolmuş
+        discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
+    }
+
+    // Token başka bir IP'den kullanıldığında
+    if (user.used && user.ip !== ip) {
+        discordMessage.embeds[0].color = 16776960;  // Sarı renk: Hata
+        discordMessage.embeds[0].description = `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`;
+    }
 
     await fetch(webhookUrl, {
         method: 'POST',
