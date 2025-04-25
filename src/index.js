@@ -98,9 +98,9 @@ http://iptv-info.local/expire`;
     const discordMessage = {
         embeds: [
             {
-                title: "Token Kullanıldı",
+                title: "Token Durumu",
                 description: `Token ${key} kullanıldı.\nKullanıcı IP: ${ip}`,
-                color: 3066993,  // Başarılı kullanım yeşil renk
+                color: 3066993,  // Varsayılan renk (Yeşil)
                 fields: [
                     {
                         name: "Kullanıcı Bilgileri",
@@ -118,22 +118,38 @@ http://iptv-info.local/expire`;
         ]
     };
 
-    // Eğer kullanıcı aynı token'ı aynı IP ile kullanırsa
-    if (user.used && user.ip === ip) {
-        discordMessage.embeds[0].color = 3447003;  // Mavi renk: Tekrar kullanım
-        discordMessage.embeds[0].description = `Token ${key} aynı IP üzerinden tekrar kullanıldı.\nIP: ${ip}`;
-    }
-
-    // Token süresi bitmişse
+    // Token süresi bitmişse, kırmızı renk
     if (currentDate > expireDate) {
-        discordMessage.embeds[0].color = 15158332;  // Kırmızı renk: Süre dolmuş
+        discordMessage.embeds[0].color = 15158332;  // Kırmızı renk
         discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
     }
 
-    // Token başka bir IP'den kullanıldığında
-    if (user.used && user.ip !== ip) {
-        discordMessage.embeds[0].color = 16776960;  // Sarı renk: Hata
+    // Token başka bir IP adresi üzerinden kullanıldığında, sarı renk
+    else if (user.used && user.ip !== ip) {
+        discordMessage.embeds[0].color = 16776960;  // Sarı renk
         discordMessage.embeds[0].description = `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`;
+    }
+
+    // Token ve IP aynı ise ve 1 haftadan az kalmışsa, gri renk
+    else if (user.used && user.ip === ip) {
+        const timeDiff = expireDate - currentDate; // Kalan süre
+        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 1 hafta = 7 gün
+        if (timeDiff <= oneWeekInMs) {
+            discordMessage.embeds[0].color = 808080;  // Gri renk
+            discordMessage.embeds[0].description = `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`;
+        }
+    }
+
+    // Yeni token ve aynı IP ise, siyah renk
+    else if (!user.used && user.ip === ip) {
+        discordMessage.embeds[0].color = 0x000000;  // Siyah renk
+        discordMessage.embeds[0].description = `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
+    }
+
+    // Yeni token ve yeni IP ise, beyaz renk
+    else if (!user.used && user.ip !== ip) {
+        discordMessage.embeds[0].color = 0xFFFFFF;  // Beyaz renk
+        discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
     }
 
     await fetch(webhookUrl, {
