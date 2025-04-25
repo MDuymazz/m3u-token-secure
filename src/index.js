@@ -122,12 +122,22 @@ http://iptv-info.local/expire`;
     if (currentDate > expireDate) {
         discordMessage.embeds[0].color = 15158332;  // Kırmızı renk
         discordMessage.embeds[0].description = `Token ${key} süresi dolmuş.\nIP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
     }
 
     // Token başka bir IP adresi üzerinden kullanıldığında, sarı renk
     else if (user.used && user.ip !== ip) {
         discordMessage.embeds[0].color = 16776960;  // Sarı renk
         discordMessage.embeds[0].description = `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
     }
 
     // Token ve IP aynı ise ve 1 haftadan az kalmışsa, gri renk
@@ -137,6 +147,11 @@ http://iptv-info.local/expire`;
         if (timeDiff <= oneWeekInMs) {
             discordMessage.embeds[0].color = 808080;  // Gri renk
             discordMessage.embeds[0].description = `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`;
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(discordMessage),
+            });
         }
     }
 
@@ -144,19 +159,23 @@ http://iptv-info.local/expire`;
     else if (!user.used && user.ip === ip) {
         discordMessage.embeds[0].color = 0x000000;  // Siyah renk
         discordMessage.embeds[0].description = `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
     }
 
     // Yeni token ve yeni IP ise, beyaz renk
     else if (!user.used && user.ip !== ip) {
         discordMessage.embeds[0].color = 0xFFFFFF;  // Beyaz renk
         discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordMessage),
+        });
     }
-
-    await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(discordMessage),
-    });
 
     return new Response(m3uData, {
         headers: {
