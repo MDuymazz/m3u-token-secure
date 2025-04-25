@@ -26,8 +26,7 @@ async function handleRequest(request) {
 
     const ip = request.headers.get("CF-Connecting-IP");
     const currentDate = new Date();
-    const expireDate = new Date(user.expire_date);
-    const turkeyTime = new Date(expireDate.toLocaleString("en-US", { timeZone: user.timezone || "Europe/Istanbul" }));
+    const expireDate = new Date(user.expire_date);  // expire_date'yi olduğu gibi alıyoruz
 
     const discordMessage = {
         embeds: [
@@ -115,14 +114,8 @@ https://iptv-info.local/sure-doldu2`;
         discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
     }
 
-    const expireString = turkeyTime.toLocaleString("tr-TR", {
-        timeZone: user.timezone || "Europe/Istanbul",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
+    // expire_date'yi olduğu gibi göstereceğiz
+    const expireString = user.expire_date.slice(0, 19);  // Doğrudan expire_date'i kullanıyoruz
 
     const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
 http://iptv-info.local/expire`;
