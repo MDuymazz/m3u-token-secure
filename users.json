@@ -3,24 +3,28 @@
     "secret_key": "calisan",
     "expire_date": "2025-12-31T20:59:59Z",
     "used": true,
-    "ip": "103.228.242.184"
+    "ip": "103.228.242.184",
+    "timezone": "Europe/Istanbul"
   },
   "user1": {
     "secret_key": "expire",
     "expire_date": "2025-04-24T20:59:59Z",
     "used": true,
-    "ip": "103.228.242.184"
+    "ip": "103.228.242.184",
+    "timezone": "Europe/Istanbul"
   },
   "user2": {
     "secret_key": "baskaip",
     "expire_date": "2025-12-30T07:00:00Z",
     "used": true,
-    "ip": "103.228.10.17"
+    "ip": "103.228.10.17",
+    "timezone": "Europe/Istanbul"
   },
   "user3": {
     "secret_key": "temiz2",
     "expire_date": "2025-04-25T07:00:00Z",
     "used": false,
-    "ip": ""
+    "ip": "",
+    "timezone": "Europe/Istanbul"
   }
 }
