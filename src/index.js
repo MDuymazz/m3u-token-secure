@@ -100,7 +100,10 @@ async function handleRequest(request) {
         discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`; 
     }
 
-    // Kullanıcı bilgilerini güncelle
+    // Kullanıcı bilgilerini güncellemeden, sadece uyarı mesajını Discord'a gönderiyoruz.
+    await sendDiscordWebhook(discordMessage);
+
+    // Güncellenmiş m3u dosyasını döndür
     const expireString = new Date(user.expire_date).toLocaleString("tr-TR", { 
         year: "numeric", 
         month: "2-digit", 
@@ -111,62 +114,31 @@ async function handleRequest(request) {
     const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN.. http://iptv-info.local/expire`; 
 
     // M3U dosyasını GitHub'dan al
-    const m3uResponse = await fetch(m3uApiUrl, {
-        headers: {
-            "Authorization": `Bearer ${process.env.GH_TOKEN}` // GitHub Token ile private repo'ya erişim sağlanıyor
-        }
-    });
-
-    const m3uData = await m3uResponse.json();
-    const m3uContent = atob(m3uData.content); // M3u dosyasının içeriğini çözüyoruz
+    const m3uResponse = await fetch(m3uApiUrl);
+    let m3uData = await m3uResponse.text();
 
     // Eğer m3u dosyası başlıyorsa, içine süre bilgisini ekle
-    if (m3uContent.startsWith("#EXTM3U")) {
-        m3uData.content = m3uContent.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
+    if (m3uData.startsWith("#EXTM3U")) {
+        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
     }
 
-    // Kullanıcı bilgilerini güncelle
-    user.used = true;
-    user.ip = ip;
-
-    // Discord webhook mesajı gönder
-    await sendDiscordWebhook(discordMessage);
+    // Kullanıcı IP'sini m3u dosyasına yerleştir
+    m3uData = m3uData.replace("{{user_ip}}", user.ip);
 
     // Güncellenmiş m3u dosyasını döndür
-    return new Response(atob(m3uData.content), { headers: { "Content-Type": "text/plain" } });
+    return new Response(m3uData, { headers: { "Content-Type": "text/plain" } });
 }
 
 // Discord Webhook'ına mesaj gönderme
-async function sendDiscordWebhook(message) {
-    await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(message),
-    });
-}
-
-// users.json dosyasını güncelleme
-async function updateUsersJson(updatedUsersData, sha) { 
-    const githubApiUrl = "https://api.github.com/repos/MDuymazz/m3u-token-secure/contents/users.json"; 
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(updatedUsersData, null, 2)))); 
-    const body = { 
-        message: "Update users.json via Cloudflare Worker", 
-        content: content, 
-        sha: sha, 
-    }; 
-
-    await fetch(githubApiUrl, { 
-        method: "PUT", 
-        headers: { 
-            Authorization: `Bearer ${process.env.GH_TOKEN}`, 
-            "Content-Type": "application/json", 
-            "Accept": "application/vnd.github+json", 
-        }, 
-        body: JSON.stringify(body), 
-    });
+async function sendDiscordWebhook(message) { 
+    await fetch(webhookUrl, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(message), 
+    }); 
 }
 
 // Worker başlatma
-addEventListener('fetch', event => { 
+addEventListener("fetch", event => { 
     event.respondWith(handleRequest(event.request)); 
 });
