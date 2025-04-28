@@ -1,3 +1,6 @@
 name = "m3u-token-secure"
 main = "src/index.js"
 compatibility_date = "2025-04-24"
+
+[[env.production]]
+name = "GH_TOKEN"
