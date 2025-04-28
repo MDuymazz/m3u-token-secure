@@ -30,14 +30,14 @@
     "ip": ""
   },
    "user5": {
-    "secret_key": "temiz",
-    "expire_date": "2025-04-24T20:59:59Z",
+    "secret_key": "eskisehir",
+    "expire_date": "2099-12-31T23:59:59Z",
     "used": false,
     "ip": ""
   },
   "user6": {
-    "secret_key": "temiz2",
-    "expire_date": "2025-12-30T07:00:00Z",
+    "secret_key": "bodrum",
+    "expire_date": "2099-12-31T23:59:59Z",
     "used": false,
     "ip": ""
   },
