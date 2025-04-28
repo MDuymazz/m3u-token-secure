@@ -1,4 +1,4 @@
-name = "m3u-token"
+name = "m3u-token-secure"
 main = "src/index.js"
 compatibility_date = "2025-04-24"
 
