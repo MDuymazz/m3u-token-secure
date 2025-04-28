@@ -1,27 +1,33 @@
 const usersUrl = "https://raw.githubusercontent.com/MDuymazz/m3u-token-secure/refs/heads/main/users.json";
 const webhookUrl = "https://canary.discord.com/api/webhooks/1364967293737766964/qz8YIsZEqo-E_StXVcgdrNQZjvFk5349nIdZ8z-LvP-Uzh69eqlUPBP9p-QGcrs12dZy";
 
-// GitHub API'den m3u dosyasını çekmek için fonksiyon
-async function fetchM3UFile() {
-    const repoOwner = 'MDuymazz';  // GitHub kullanıcı adı
-    const repoName = 'Py';  // Repo adı
-    const filePath = 'm3u8/playlist.m3u';  // Dosya yolu
+// Cloudflare Workers'da secrets kısmından GH_TOKEN alıyoruz
+const GH_TOKEN = secrets.GH_TOKEN;  // GH_TOKEN'ı Cloudflare secrets'dan alıyoruz
 
-    const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+const repoOwner = 'MDuymazz';
+const repoName = 'Py';
+const filePath = 'm3u8/playlist.m3u';
 
-    const response = await fetch(url, {
+// GitHub API'yi kullanarak m3u dosyasını almak için gerekli URL
+const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+async function fetchM3U() {
+    const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
-            'Authorization': `Bearer ${GH_TOKEN}`,  // GH_TOKEN çevresel değişkenini burada kullanıyoruz
-        }
+            'Authorization': `Bearer ${GH_TOKEN}`,  // GitHub API'ye erişim için token
+            'Accept': 'application/vnd.github.v3.raw',  // Raw içerik almak için gerekli başlık
+        },
     });
 
     if (!response.ok) {
-        throw new Error(`GitHub API hatası: ${response.statusText}`);
+        console.error(`GitHub API hatası: ${response.status} - ${response.statusText}`);
+        return new Response("GitHub API'ye erişim sağlanamadı.", { status: 500 });
     }
 
-    const data = await response.json();
-    const fileContent = atob(data.content);  // Dosya içeriğini base64 olarak çözümle
-    return fileContent;
+    const data = await response.json();  // API'den JSON formatında döner
+    const m3uContent = atob(data.content);  // GitHub'dan dönen Base64 kodlu içeriği çözme
+    return m3uContent;  // Çözülmüş raw m3u içeriği döndürüyoruz
 }
 
 async function handleRequest(request) {
@@ -38,7 +44,6 @@ async function handleRequest(request) {
 
     key = key.slice(0, -4);
 
-    // Kullanıcı verilerini çek
     const usersResponse = await fetch(usersUrl);
     const usersData = await usersResponse.json();
     const user = Object.values(usersData).find(user => user.secret_key === key);
@@ -122,35 +127,8 @@ https://iptv-info.local/sure-doldu2`;
         });
     }
 
-    // Geri kalan senaryolar için embed güncellemesi
-    if (user.used && user.ip === ip) {
-        const timeDiff = expireDate - currentDate;
-        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-        if (timeDiff <= oneWeekInMs) {
-            discordMessage.embeds[0].color = 808080;
-            discordMessage.embeds[0].description = `Token ${key} süresinin bitmesine 1 hafta kaldı.\nIP: ${ip}`;
-        }
-    } else if (!user.used && user.ip === ip) {
-        discordMessage.embeds[0].color = 0x000000;
-        discordMessage.embeds[0].description = `Yeni token, aynı IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
-    } else if (!user.used && user.ip !== ip) {
-        discordMessage.embeds[0].color = 0xFFFFFF;
-        discordMessage.embeds[0].description = `Yeni token, yeni IP üzerinden kullanıldı.\nToken: ${key}\nIP: ${ip}`;
-    }
-
-    const expireString = new Date(user.expire_date).toLocaleString("tr-TR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-
-    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
-http://iptv-info.local/expire`;
-
-    // M3U dosyasını al
-    const m3uData = await fetchM3UFile();
+    // GitHub'dan m3u içeriğini çekiyoruz
+    const m3uData = await fetchM3U();
 
     // Kullanıcıyı işaretle ve kaydet
     user.used = true;
@@ -171,7 +149,6 @@ http://iptv-info.local/expire`;
         body: JSON.stringify(discordMessage),
     });
 
-    // M3U dosyasını dön
     return new Response(m3uData, {
         headers: {
             "Content-Type": "text/plain",
