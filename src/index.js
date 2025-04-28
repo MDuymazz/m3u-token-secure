@@ -68,6 +68,7 @@ async function handleRequest(request) {
         
         await sendDiscordWebhook(discordMessage);
         
+        // Token başka bir IP ile kullanıldığı için, m3u yerine uyarı mesajı döndürüyoruz
         const customM3U = `#EXTM3U #EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!", LÜTFEN DESTEK ALINIZ... http://iptv-info.local/token-hatasi`;
         return new Response(customM3U, { headers: { "Content-Type": "text/plain" } }); 
     }
