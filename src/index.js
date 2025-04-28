@@ -2,7 +2,6 @@ const m3uUrl = "https://raw.githubusercontent.com/zerodayip/Py/refs/heads/main/m
 const usersUrl = "https://raw.githubusercontent.com/zerodayip/m3u-token-secure/refs/heads/main/users.json";
 const webhookUrl = "https://canary.discord.com/api/webhooks/1364967293737766964/qz8YIsZEqo-E_StXVcgdrNQZjvFk5349nIdZ8z-LvP-Uzh69eqlUPBP9p-QGcrs12dZy";
 
-// Asıl handler fonksiyonumuz
 async function handleRequest(request) {
     const url = new URL(request.url);
     let key = url.searchParams.get("key");
@@ -17,9 +16,18 @@ async function handleRequest(request) {
 
     key = key.slice(0, -4); // .m3u uzantısını çıkartıyoruz
 
-    // Kullanıcı bilgilerini al
-    const usersResponse = await fetch(usersUrl);
-    const usersData = await usersResponse.json();
+    // Kullanıcı bilgilerini güvenli şekilde alıyoruz
+    let usersData;
+    try {
+        const usersResponse = await fetch(usersUrl);
+        if (!usersResponse.ok) {
+            throw new Error(`GitHub isteği başarısız oldu. Status: ${usersResponse.status}`);
+        }
+        usersData = await usersResponse.json();
+    } catch (error) {
+        return new Response("Kullanıcı verisi alınamadı: " + error.message, { status: 500 });
+    }
+
     const user = Object.values(usersData).find(user => user.secret_key === key);
 
     if (!user) {
@@ -31,7 +39,7 @@ async function handleRequest(request) {
     const expireDate = new Date(user.expire_date);
     const turkeyTime = new Date(expireDate.toLocaleString("en-US", { timeZone: user.timezone || "Europe/Istanbul" }));
 
-    // **Expire durumu** kontrolü
+    // Süresi dolmuş mu?
     if (currentDate > expireDate) {
         const expiredM3U = `#EXTM3U
 
@@ -41,85 +49,33 @@ https://iptv-info.local/sure-doldu1
 #EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
 https://iptv-info.local/sure-doldu2`;
 
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Süresi Dolmuş",
-                    description: `Token ${key} süresi dolmuş.\nIP: ${ip}`,
-                    color: 15158332,
-                    fields: [
-                        {
-                            name: "Token Bilgisi",
-                            value: `Token: ${key}\nIP: ${ip}`
-                        }
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`
-                    },
-                }
-            ]
-        };
-
-        // Discord'a mesaj gönder
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
+        await sendDiscordNotification("Token Süresi Dolmuş", key, ip, 15158332);
 
         return new Response(expiredM3U, {
-            headers: {
-                "Content-Type": "text/plain"
-            }
+            headers: { "Content-Type": "text/plain" }
         });
     }
 
-    // **Başka cihazdan kullanılmışsa** kontrolü
+    // Başka cihazdan mı kullanılıyor?
     if (user.used && user.ip !== ip) {
-        const discordMessage = {
-            embeds: [
-                {
-                    title: "Token Başka Cihazda Kullanıldı",
-                    description: `Token ${key} başka bir IP adresi üzerinden kullanılmıştır.\nYeni IP: ${ip}`,
-                    color: 16776960,
-                    fields: [
-                        {
-                            name: "Token Bilgisi",
-                            value: `Token: ${key}\nYeni IP: ${ip}`
-                        }
-                    ],
-                    footer: {
-                        text: `IPTV Sistem Bilgisi | ${new Date().toLocaleString()}`
-                    },
-                }
-            ]
-        };
+        await sendDiscordNotification("Token Başka Cihazda Kullanıldı", key, ip, 16776960);
 
-        // Discord'a mesaj gönder
-        await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(discordMessage),
-        });
-
-        const customM3U = `#EXTM3U
+        const warningM3U = `#EXTM3U
 
 #EXTINF:-1 tvg-name="UYARI" tvg-logo="https://cdn-icons-png.flaticon.com/512/595/595067.png" group-title="BU TOKEN BAŞKA BİR CİHAZDA KULLANILMIŞ!", LÜTFEN DESTEK ALINIZ...
 http://iptv-info.local/token-hatasi`;
 
-        return new Response(customM3U, {
-            headers: {
-                "Content-Type": "text/plain"
-            }
+        return new Response(warningM3U, {
+            headers: { "Content-Type": "text/plain" }
         });
     }
 
-    // **Diğer Senaryolar** (Kullanıcıyı işaretle, normal kullanım)
+    // Normal kullanım
     let m3uData = await fetchM3UData();
     if (user.used && user.ip === ip) {
         const timeDiff = expireDate - currentDate;
-        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-        if (timeDiff <= oneWeekInMs) {
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
+        if (timeDiff <= oneWeek) {
             m3uData = appendExpireInfo(m3uData, expireDate);
         }
     }
@@ -127,22 +83,52 @@ http://iptv-info.local/token-hatasi`;
     user.used = true;
     user.ip = ip;
 
-    // Kullanıcı verisini güncelle
-    await fetch(usersUrl, {
-        method: "PUT",
-        body: JSON.stringify(usersData),
+    // Kullanıcı verisini güncelle (şu anda gerçek güncelleme yapamıyoruz çünkü github raw json değiştirilemiyor)
+
+    await sendDiscordNotification("Yeni Token Kullanımı", key, ip, 3066993);
+
+    return new Response(m3uData, {
+        headers: { "Content-Type": "text/plain" }
+    });
+}
+
+async function fetchM3UData() {
+    const response = await fetch(m3uUrl, {
         headers: {
-            "Content-Type": "application/json"
+            "Authorization": `Bearer ${GH_TOKEN}`,
         }
     });
+    if (!response.ok) {
+        throw new Error("GitHub'dan M3U verisi alınamadı");
+    }
+    return await response.text();
+}
 
-    // Discord'a mesaj gönder
+function appendExpireInfo(m3uData, expireDate) {
+    const expireString = expireDate.toLocaleString("tr-TR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
+http://iptv-info.local/expire`;
+
+    if (m3uData.startsWith("#EXTM3U")) {
+        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
+    }
+    return m3uData;
+}
+
+async function sendDiscordNotification(title, key, ip, color) {
     const discordMessage = {
         embeds: [
             {
-                title: "Yeni Token Kullanımı",
+                title: title,
                 description: `Token ${key} kullanıldı.\nIP: ${ip}`,
-                color: 3066993,
+                color: color,
                 fields: [
                     {
                         name: "Token Bilgisi",
@@ -161,46 +147,6 @@ http://iptv-info.local/token-hatasi`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(discordMessage),
     });
-
-    return new Response(m3uData, {
-        headers: {
-            "Content-Type": "text/plain",
-        }
-    });
-}
-
-// m3u verisini al ve kullanıcı bilgilerini ekle
-async function fetchM3UData() {
-    const response = await fetch(m3uUrl, {
-        headers: {
-            "Authorization": `Bearer ${GH_TOKEN}`,
-        }
-    });
-    if (!response.ok) {
-        throw new Error("GitHub'dan veri alınamadı");
-    }
-
-    let m3uData = await response.text();
-    return m3uData;
-}
-
-// m3u dosyasına expire bilgisi ekle
-function appendExpireInfo(m3uData, expireDate) {
-    const expireString = expireDate.toLocaleString("tr-TR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-
-    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
-http://iptv-info.local/expire`;
-
-    if (m3uData.startsWith("#EXTM3U")) {
-        m3uData = m3uData.replace("#EXTM3U", `#EXTM3U\n${expireInfo}`);
-    }
-    return m3uData;
 }
 
 addEventListener("fetch", event => {
