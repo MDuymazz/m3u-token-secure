@@ -113,11 +113,13 @@ function appendExpireInfo(m3uData, expireDate) {
         minute: "2-digit"
     });
 
-    const expireInfo = `#EXTM3U
-#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
 http://iptv-info.local/expire`;
 
-    return m3uData.replace("#EXTM3U", expireInfo);
+    // #EXTM3U başındaki boşlukları temizle ve expireInfo'yu ekle
+    m3uData = m3uData.replace(/^#EXTM3U\s*/m, `#EXTM3U\n${expireInfo}\n`);
+
+    return m3uData;
 }
 
 async function sendDiscordNotification(title, key, ip, color) {
