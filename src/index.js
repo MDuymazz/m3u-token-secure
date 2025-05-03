@@ -127,7 +127,7 @@ async function sendDiscordNotification(title, key, ip, color) {
         embeds: [
             {
                 title: title,
-                description: `Token kullanıldı.`,
+                description: `Token kullanıldı. ${key}`,
                 color: color,
                 fields: [
                     {
