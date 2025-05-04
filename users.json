@@ -38,13 +38,13 @@
   "user6": {
     "secret_key": "bodrum",
     "expire_date": "2099-12-31T23:59:59Z",
-    "used": false,
-    "ip": ""
+    "used": true,
+    "ip": "78.174.209.12"
   },
   "user7": {
     "secret_key": "temiz3",
     "expire_date": "2025-12-31T23:59:59Z",
-    "used": true,
+    "used": false,
     "ip": ""
   },
   "user8": {
