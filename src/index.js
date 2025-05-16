@@ -109,7 +109,7 @@ function appendExpireInfo(m3uData, expireDate) {
         minute: "2-digit"
     });
 
-    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="IPTV BİTİŞ SÜRESİ: ${expireString}", İYİ GÜNLERDE KULLANIN..
+    const expireInfo = `#EXTINF:-1 tvg-name="BİLGİ" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828970.png" group-title="SON TARİH: ${expireString}",...
 http://iptv-info.local/expire`;
 
     // #EXTM3U başındaki boşlukları temizle ve expireInfo'yu ekle
