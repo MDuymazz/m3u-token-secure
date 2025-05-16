@@ -49,9 +49,11 @@ https://iptv-info.local/sure-doldu1
 #EXTINF:-1 tvg-name="SATIN AL" tvg-logo="https://cdn-icons-png.flaticon.com/512/1828/1828925.png" group-title="İLETİŞİME GEÇİNİNİZ.", IPTV SÜRESİ UZATMAK İÇİN BİZİMLE İLETİŞİME GEÇİN!
 https://iptv-info.local/sure-doldu2`;
 
+        const expiredM3UWithInfo = appendExpireInfo(expiredM3U, expireDate); // eklendi
+
         await sendDiscordNotification("Token Süresi Dolmuş", key, ip, 15158332);
 
-        return new Response(expiredM3U, {
+        return new Response(expiredM3UWithInfo, {
             headers: { "Content-Type": "text/plain" }
         });
     }
@@ -72,13 +74,7 @@ http://iptv-info.local/token-hatasi`;
 
     // Normal kullanım
     let m3uData = await fetchM3UData();
-    if (user.used && user.ip === ip) {
-        const timeDiff = expireDate - currentDate;
-        const oneWeek = 7 * 24 * 60 * 60 * 1000;
-        if (timeDiff <= oneWeek) {
-            m3uData = appendExpireInfo(m3uData, expireDate);
-        }
-    }
+    m3uData = appendExpireInfo(m3uData, expireDate); // Güncellendi: Her zaman ekle
 
     user.used = true;
     user.ip = ip;
