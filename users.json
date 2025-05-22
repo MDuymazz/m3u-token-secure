@@ -26,20 +26,20 @@
   "user4": {
     "secret_key": "aydin",
     "expire_date": "2099-12-31T23:59:59Z",
-    "used": true,
-    "ip": "78.169.70.243"
+    "used": false,
+    "ip": ""
   },
    "user5": {
     "secret_key": "eskisehir",
     "expire_date": "2099-12-31T23:59:59Z",
-    "used": true,
-    "ip": "176.88.29.247"
+    "used": false,
+    "ip": ""
   },
   "user6": {
     "secret_key": "bodrum",
     "expire_date": "2099-12-31T23:59:59Z",
-    "used": true,
-    "ip": "88.230.58.54"
+    "used": false,
+    "ip": ""
   },
   "user7": {
     "secret_key": "temiz3",
