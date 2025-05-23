@@ -1,6 +1,6 @@
 const m3uUrl = "https://raw.githubusercontent.com/zerodayip/Py/refs/heads/main/m3u8/playlist.m3u"; // M3U dosyasının raw URL'si
 const usersUrl = "https://raw.githubusercontent.com/zerodayip/m3u-token-secure/refs/heads/main/users.json";
-const webhookUrl = "https://canary.discord.com/api/webhooks/1364967293737766964/qz8YIsZEqo-E_StXVcgdrNQZjvFk5349nIdZ8z-LvP-Uzh69eqlUPBP9p-QGcrs12dZy";
+const webhookUrl = "https://discord.com/api/webhooks/1364967297566900254/bctJY8MUOzdWGe-eEJPc3Jo0xet6vjWfa36dzQUpDOY-k-qeIxsy-hKBvDO79jHHRzKb";
 
 async function handleRequest(request) {
     const url = new URL(request.url);
